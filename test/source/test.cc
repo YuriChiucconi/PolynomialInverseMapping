@@ -74,6 +74,7 @@ void Test<dim>::run()
     
     // POLYNOMIAL INVERSE
     
+    
     double poly_avg_error = 0;
     for (auto particle : particle_handler)
     {
@@ -84,7 +85,7 @@ void Test<dim>::run()
     poly_avg_error /= particle_handler.n_global_particles();
     
     
-    std::cout << "POLYNOMIAL:\t" << newton_avg_error << std::endl;
+    std::cout << "POLYNOMIAL:\t" << poly_avg_error << std::endl;
 }
 
 template class Test<2>;
