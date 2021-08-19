@@ -1,0 +1,8 @@
+.DS_Store
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+CXX.build/
+CXX.xcodeproj/
+build/
+cmake_install.cmake
