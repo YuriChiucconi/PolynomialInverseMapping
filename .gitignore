@@ -6,4 +6,4 @@ PolynomialInverseMapping.build/
 PolynomialInverseMapping.xcodeproj/
 build/
 cmake_install.cmake
-
+Debug/
