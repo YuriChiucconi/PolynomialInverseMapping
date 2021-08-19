@@ -6,3 +6,4 @@ CXX.build/
 CXX.xcodeproj/
 build/
 cmake_install.cmake
+Debug/
