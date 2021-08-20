@@ -3,7 +3,10 @@
 
 int main()
 {
-    Test<2> my_test(2,3,3,20);
+    Parameters par;
+    ParameterAcceptor::initialize("parameters.prm", "used_parameters.prm");
+
+    Test<2> my_test(par);
     my_test.run();
     
     return 0;

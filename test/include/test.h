@@ -2,6 +2,24 @@
 #define __TEST
 
 #include "../../class/include/class.h"
+#include <deal.II/base/parameter_acceptor.h>
+
+class Parameters : public ParameterAcceptor
+{
+public:
+  Parameters()
+  {
+    add_parameter("Refinement", refinements);
+    add_parameter("Forward degree", forward_degree);
+    add_parameter("Inverse  degree", inverse_degree);
+    add_parameter("N particles per cell", particles_per_cell);
+  }
+
+  unsigned int refinements            = 3;
+  unsigned int forward_degree         = 3;
+  unsigned int inverse_degree = 4;
+  unsigned int particles_per_cell   = 10;
+};
 
 template <int dim>
 class Test
@@ -9,7 +27,9 @@ class Test
     
 private:
     
-    PIM<dim> mapping;
+    MappingQGeneric<dim> newton_inverse_mapping;
+    
+    PIM<dim> polynomial_inverse_mapping;
     
     unsigned int refinements;
     
@@ -17,9 +37,13 @@ private:
     
     Triangulation<dim> tria;
     
+    
+    
 public:
     
-    Test(unsigned int forward_degree, unsigned int inverse_degree, unsigned int refinements, unsigned int particles_per_cell);
+    Test(const Parameters &par);
+    
+    //Test(unsigned int forward_degree, unsigned int inverse_degree, unsigned int refinements, unsigned int particles_per_cell);
     
     void run();
     
