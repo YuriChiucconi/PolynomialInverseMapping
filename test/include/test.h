@@ -1,8 +1,9 @@
 #ifndef __TEST
 #define __TEST
 
-#include "../../class/include/class.h"
 #include <deal.II/base/parameter_acceptor.h>
+
+#include "../../class/include/class.h"
 
 class Parameters : public ParameterAcceptor
 {

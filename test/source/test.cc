@@ -1,11 +1,14 @@
 
 #include <deal.II/base/timer.h>
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/numerics/data_out.h>
+
 #include <deal.II/particles/particle_handler.h>
 
 #include <boost/range/irange.hpp>
 
-#include <deal.II/numerics/data_out.h>
+
 
 
 
@@ -55,7 +58,9 @@ void Test<dim>::run()
                       , TimerOutput::summary
                       , TimerOutput::cpu_and_wall_times);
     
+    
     // Construction of the triangulation
+    parallel::distributed::Triangulation<dim> tria(MPI_COMM_WORLD);
     {
         TimerOutput::Scope timer_section(timer, "(1) Triangulation construction");
         GridGenerator::hyper_shell(tria, Point<dim>(), 1.0, 2.0);
