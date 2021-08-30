@@ -2,19 +2,21 @@
 #include <deal.II/base/timer.h>
 
 #include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_out.h>
 #include <deal.II/numerics/data_out.h>
 
+#include <deal.II/particles/particle.h>
 #include <deal.II/particles/particle_handler.h>
+#include <deal.II/particles/data_out.h>
 
 #include <boost/range/irange.hpp>
 
 
-
+#include <random>
 
 
 #include "../../class/include/class.h"
 #include "../include/test.h"
-
 
 using iota = boost::integer_range<unsigned int>;
 
@@ -23,13 +25,15 @@ using iota = boost::integer_range<unsigned int>;
 // ------------------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------------------
 template <int dim>
-inline Point<dim> random_point(const int seed)
+inline Point<dim> random_point()
 {
-  srand(seed);
-  Point<dim> p;
-  for (unsigned int i = 0; i < dim; ++i)
-    p[i] = rand()/(double)RAND_MAX;
-  return p;
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+    Point<dim> p;
+    for (unsigned int i = 0; i < dim; ++i)
+        p[i] = dis(gen);
+    return p;
 }
 // ------------------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------------------
@@ -61,41 +65,55 @@ void Test<dim>::run()
     
     // Construction of the triangulation
     parallel::distributed::Triangulation<dim> tria(MPI_COMM_WORLD);
-    {
-        TimerOutput::Scope timer_section(timer, "(1) Triangulation construction");
-        GridGenerator::hyper_shell(tria, Point<dim>(), 1.0, 2.0);
-        tria.refine_global(refinements);
-    }
+    //tria.refine_global(refinements);
+    const Point<dim> center(0.,0.);
+    const double   inner_radius = 5., outer_radius = 10.;
+    GridGenerator::hyper_shell(tria, center, inner_radius, outer_radius, 10);
+    tria.refine_global(refinements);
     
-    
+    std::ofstream out("test_grid.vtk");
+    GridOut       grid_out;
+    grid_out.write_vtk(tria, out);
+    std::cout << "Grid written to test_grid.vtk" << std::endl;
 
     Particles::ParticleHandler<dim> particle_handler(tria, newton_inverse_mapping);
-    // Generation of the particles
+    std::multimap<typename Triangulation<dim>::active_cell_iterator, Particles::Particle<dim>> particles;
+    for (const auto &cell : tria.active_cell_iterators())
     {
-        TimerOutput::Scope timer_section(timer, "(2) Random particle generation");
-        
-        
-        std::multimap<typename Triangulation<dim>::active_cell_iterator, Particles::Particle<dim>> particles;
-        
-        for (const auto &cell : tria.active_cell_iterators())
+        for (auto i : iota(0, particles_per_cell))
         {
-            for (auto i : iota(0, particles_per_cell))
-            {
-              Particles::Particle<dim> p;
-              auto loc = random_point<dim>(i);
-              p.set_reference_location(loc);
-              p.set_location(newton_inverse_mapping.transform_unit_to_real_cell(cell, loc));
-              particles.insert(std::make_pair(cell, p));
-            }
+            Particles::Particle<dim> p;
+            auto loc = random_point<dim>();
+            p.set_reference_location(loc);
+            p.set_location(newton_inverse_mapping.transform_unit_to_real_cell(cell, loc));
+            particles.insert(std::make_pair(cell, p));
         }
-        particle_handler.insert_particles(particles);
     }
+    particle_handler.insert_particles(particles);
     
+    std::ofstream   ofile("particles.vtu");
+    Particles::DataOut<dim, dim> data_out;
+    data_out.build_patches(particle_handler);
+    data_out.write_vtu(ofile);
+    std::cout << "Particles written to particles.vtu" << std::endl;
     
+    /* OUTPUT per Python
+    std::cout << "[";
+    for(auto i = particle_handler.begin(); i != particle_handler.end(); ++i)
+    {
+        auto loc = i->get_location();
+        std::cout << "[" << loc[0];
+        for(int j=1; j<dim; j++)
+        {
+            std::cout << ", " << loc[j];
+        }
+        std::cout << "]," << std::endl;
+    }
+    */
     
     // NEWTON
     {
-        TimerOutput::Scope timer_section(timer, "(4) Newton");
+        TimerOutput::Scope timer_section(timer, "(1) Newton");
         double newton_avg_error = 0;
         for (auto particle : particle_handler)
         {
@@ -110,13 +128,13 @@ void Test<dim>::run()
     
     
     {
-        TimerOutput::Scope timer_section(timer, "(5) Inverse map initilization");
+        TimerOutput::Scope timer_section(timer, "(2) OFF-line PIM");
         polynomial_inverse_mapping.initialize(tria);
     }
     
     // POLYNOMIAL INVERSE
     {
-        TimerOutput::Scope timer_section(timer, "(6) Polynomial Inverse");
+        TimerOutput::Scope timer_section(timer, "(3) IN-line PIM");
         double poly_avg_error = 0;
         for (auto particle : particle_handler)
         {

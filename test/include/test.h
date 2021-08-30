@@ -16,10 +16,10 @@ public:
     add_parameter("N particles per cell", particles_per_cell);
   }
 
-  unsigned int refinements            = 3;
-  unsigned int forward_degree         = 3;
-  unsigned int inverse_degree = 4;
-  unsigned int particles_per_cell   = 10;
+  unsigned int refinements              = 3;
+  unsigned int forward_degree           = 3;
+  unsigned int inverse_degree           = 4;
+  unsigned int particles_per_cell       = 10;
 };
 
 template <int dim>
@@ -43,8 +43,6 @@ private:
 public:
     
     Test(const Parameters &par);
-    
-    //Test(unsigned int forward_degree, unsigned int inverse_degree, unsigned int refinements, unsigned int particles_per_cell);
     
     void run();
     

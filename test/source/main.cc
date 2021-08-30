@@ -10,7 +10,7 @@ int main(int argc, char **argv)
     Utilities::MPI::MPI_InitFinalize init(argc, argv);
     mpi_initlog();
     
-    Test<3> my_test(par);
+    Test<2> my_test(par);
     my_test.run();
     
     return 0;
